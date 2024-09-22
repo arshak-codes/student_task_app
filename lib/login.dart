@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:student_task_app/home.dart'; // Import the correct HomeScreen
+
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -23,6 +26,7 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -54,13 +58,12 @@ class _LoginState extends State<Login> {
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient Background with Bubbles (Circles)
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFE57F), // Light yellow
-                  Color(0xFF80DEEA), // Teal/light blue
+                  Color(0xFFFFE57F),
+                  Color(0xFF80DEEA),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -167,8 +170,13 @@ class _LoginState extends State<Login> {
                               ),
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
-                                  debugPrint('Form submitted successfully');
-                                  // Implement login logic here
+                                  // Navigate to the HomeScreen
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const HomeScreen()),
+                                  );
                                 }
                               },
                             ),
@@ -198,6 +206,27 @@ class _LoginState extends State<Login> {
   }
 }
 
+// Define the HomeScreen widget
+// class HomeScreen extends StatelessWidget {
+//   const HomeScreen({Key? key}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Home'),
+//         backgroundColor: Colors.teal,
+//       ),
+//       body: const Center(
+//         child: Text(
+//           'Welcome to the Home Screen!',
+//           style: TextStyle(fontSize: 24),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 // Custom painter for abstract bubbles
 class BubblePainter extends CustomPainter {
   @override
@@ -206,7 +235,6 @@ class BubblePainter extends CustomPainter {
       ..color = Colors.white.withOpacity(0.3)
       ..style = PaintingStyle.fill;
 
-    // Draw circles (bubbles)
     canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.2), 60, paint);
     canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.3), 90, paint);
     canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.8), 50, paint);
