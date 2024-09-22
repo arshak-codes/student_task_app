@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:student_task_app/home.dart' as home;
 import 'package:student_task_app/login.dart' as login;
+import 'package:student_task_app/splash_screen.dart' as splash;
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // Initialize bindings
   runApp(const MyApp());
 }
 
@@ -12,12 +14,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Set to false to remove debug banner
-      initialRoute:
-          '/login', // Set the initial route to login or home based on your logic
+      debugShowCheckedModeBanner: false, // Remove debug banner
+      initialRoute: '/splash', // Set initial route to SplashScreen
       routes: {
-        '/login': (context) => const login.LoginScreen(),
-        '/home': (context) => home.HomeScreen(),
+        '/splash': (context) => splash.SplashScreen(), // SplashScreen route
+        '/login': (context) => const login.LoginScreen(), // LoginScreen route
+        '/home': (context) => home.HomeScreen(), // HomeScreen route
       },
     );
   }

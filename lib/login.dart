@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:student_task_app/home.dart'; // Import the correct HomeScreen
+import 'package:student_task_app/services/auth_service.dart'; // Import the AuthService
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  static String routeName = 'LoginScreen';
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class LoginScreen extends StatelessWidget {
 }
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+  const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
@@ -26,16 +28,17 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService =
+      AuthService(); // Create an instance of AuthService
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Enter email address';
     }
     if (!RegExp(r'^[0-9]{6}@tkmce\.ac\.in$').hasMatch(value)) {
-      return 'Email must be in the format _ _ _ _ _ _ @tkmce.ac.in';
+      return 'Email must be in the format _ _ _ @tkmce.ac.in';
     }
     return null;
   }
@@ -154,9 +157,8 @@ class _LoginState extends State<Login> {
                             child: ElevatedButton(
                               style: ButtonStyle(
                                 backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.teal),
-                                shape: MaterialStateProperty.all<
+                                    WidgetStateProperty.all<Color>(Colors.teal),
+                                shape: WidgetStateProperty.all<
                                     RoundedRectangleBorder>(
                                   RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12.0),
@@ -168,15 +170,30 @@ class _LoginState extends State<Login> {
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 22),
                               ),
-                              onPressed: () {
+                              onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
-                                  // Navigate to the HomeScreen
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const HomeScreen()),
+                                  // Call AuthService to log in
+                                  bool loginSuccess = await _authService.login(
+                                    _emailController.text,
+                                    _passwordController.text,
                                   );
+
+                                  if (loginSuccess) {
+                                    // Navigate to the HomeScreen
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const HomeScreen()),
+                                    );
+                                  } else {
+                                    // Handle login failure (optional)
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Login failed.'),
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                             ),
