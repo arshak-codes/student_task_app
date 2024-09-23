@@ -15,12 +15,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<Task> _tasks = [];
   List<Task> _upcomingTasks = [];
   double _upcomingOpacity = 0.0;
-  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    // Start the fade-in animation after the screen loads
     Future.delayed(Duration(milliseconds: 500), () {
       setState(() {
         _upcomingOpacity = 1.0;
@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _tasks = tasks.where((task) => task.dueDate == today).toList();
       _upcomingTasks = tasks.where((task) => task.dueDate != today).toList()
-        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate)); // Sort by due date
     });
   }
 
@@ -124,42 +124,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return '⌚'; // Low urgency (more than 3 days)
   }
 
-  Widget _buildTaskList(List<Task> tasks, bool isToday) {
-    return ListView.builder(
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        AnimationController _controller = AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 400),
-        );
-        Animation<Offset> _offsetAnimation = Tween<Offset>(
-          begin: Offset(isToday ? -1.0 : 1.0, 0.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _controller,
-          curve: Curves.easeInOut,
-        ));
-
-        _controller.forward();
-
-        return SlideTransition(
-          position: _offsetAnimation,
-          child: Card(
-            child: ListTile(
-              title: Text(isToday
-                  ? task.title
-                  : '${_getUrgencyEmoji(task.dueDate)} ${task.title}'),
-              subtitle:
-                  Text(isToday ? task.description : 'Due on: ${task.dueDate}'),
-              trailing: isToday ? const Icon(Icons.check_circle_outline) : null,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     String today = DateFormat('EEEE, MMM d, yyyy').format(DateTime.now());
@@ -167,14 +131,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       body: Stack(
         children: [
+          // Background image
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/images/background.jpg"),
+                image: AssetImage(
+                    "assets/images/background.jpg"), // Your image path
                 fit: BoxFit.cover,
               ),
             ),
           ),
+
+          // Main content, including AppBar
           Column(
             children: [
               AppBar(
@@ -197,12 +165,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+
+              // Body content
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Display today's date
                       Text(
                         'Today: $today',
                         style: const TextStyle(
@@ -212,6 +183,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Tasks for today
                       AnimatedOpacity(
                         opacity: _upcomingOpacity,
                         duration: const Duration(seconds: 2),
@@ -225,16 +198,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 8),
+
+                      // Task list for today
                       _tasks.isEmpty
                           ? const Text(
                               'No tasks for today ☕😊.',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
                             )
                           : SizedBox(
-                              height: 200, // Fixed height for today's tasks
-                              child: _buildTaskList(_tasks, true),
+                              height: _tasks.length * 110.0,
+                              child: ListView.builder(
+                                itemCount: _tasks.length,
+                                itemBuilder: (context, index) {
+                                  final task = _tasks[index];
+                                  return Card(
+                                    child: ListTile(
+                                      title: Text(task.title),
+                                      subtitle: Text(task.description),
+                                      trailing: const Icon(
+                                          Icons.check_circle_outline),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                       const SizedBox(height: 16),
+
+                      // Upcoming Tasks section with fade-in effect
                       AnimatedOpacity(
                         opacity: _upcomingOpacity,
                         duration: const Duration(seconds: 1),
@@ -248,15 +240,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 8),
+
+                      // Upcoming tasks list with slide-in effect
                       Expanded(
                         child: _upcomingTasks.isEmpty
                             ? const Center(
                                 child: Text(
-                                  'No upcoming tasks.',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              )
-                            : _buildTaskList(_upcomingTasks, false),
+                                'No upcoming tasks.',
+                                style: TextStyle(color: Colors.white),
+                              ))
+                            : ListView.builder(
+                                itemCount: _upcomingTasks.length,
+                                itemBuilder: (context, index) {
+                                  final task = _upcomingTasks[index];
+                                  AnimationController _controller =
+                                      AnimationController(
+                                    vsync: this,
+                                    duration: const Duration(milliseconds: 400),
+                                  );
+                                  Animation<Offset> _offsetAnimation =
+                                      Tween<Offset>(
+                                    begin: Offset(1.0, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: _controller,
+                                    curve: Curves.easeInOut,
+                                  ));
+
+                                  _controller.forward();
+
+                                  return SlideTransition(
+                                    position: _offsetAnimation,
+                                    child: Card(
+                                      child: ListTile(
+                                        title: Text(
+                                            '${_getUrgencyEmoji(task.dueDate)} ${task.title}'),
+                                        subtitle:
+                                            Text('Due on: ${task.dueDate}'),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -269,29 +294,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       floatingActionButton: FloatingActionButton(
         onPressed: _addTask,
         child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          // TODO: Implement navigation to other screens
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'Study',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
   }
