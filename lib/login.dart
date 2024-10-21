@@ -37,9 +37,9 @@ class _LoginState extends State<Login> {
     if (value == null || value.isEmpty) {
       return 'Enter email address';
     }
-    if (!RegExp(r'^[0-9]{6}@tkmce\.ac\.in$').hasMatch(value)) {
-      return 'Email must be in the format _ _ _ @tkmce.ac.in';
-    }
+    // if (!RegExp(r'^[0-9]{6}@tkmce\.ac\.in$').hasMatch(value)) {
+    //   return 'Email must be in the format _ _ _ @tkmce.ac.in';
+    // }
     return null;
   }
 
@@ -47,12 +47,12 @@ class _LoginState extends State<Login> {
     if (value == null || value.isEmpty) {
       return 'Please enter Password';
     }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    if (!RegExp(r'(?=.*?[#!@%^&*-])').hasMatch(value)) {
-      return 'Password must contain at least one special character';
-    }
+    // if (value.length < 8) {
+    //   return 'Password must be at least 8 characters';
+    // }
+    // if (!RegExp(r'(?=.*?[#!@%^&*-])').hasMatch(value)) {
+    //   return 'Password must contain at least one special character';
+    // }
     return null;
   }
 

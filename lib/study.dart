@@ -1,131 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:async';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
 
-class StudyScreen extends StatefulWidget {
+class StudyScreen extends StatelessWidget {
+  final List<String> subjects = [
+    'System Software',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'Computer Science'
+  ];
+
   @override
-  _StudyScreenState createState() => _StudyScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Select a Subject'),
+        backgroundColor: const Color.fromARGB(221, 250, 250, 250),
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
+        ),
+        itemCount: subjects.length,
+        itemBuilder: (context, index) {
+          return SubjectCard(
+            subject: subjects[index],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SubjectDetailScreen(subject: subjects[index]),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 }
 
-class _StudyScreenState extends State<StudyScreen> {
-  final TextEditingController _controller = TextEditingController();
-  String _response = '';
-  Timer? _debounce;
-  bool _loading = false;
+class SubjectCard extends StatelessWidget {
+  final String subject;
+  final VoidCallback onTap;
 
-  Future<void> fetchReferences(String topic) async {
-    setState(() {
-      _loading = true;
-    });
-
-    final apiUrl = 'https://api.example.com/get-references'; // Replace with the actual API
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'topic': topic}),
-    );
-
-    setState(() {
-      _loading = false;
-    });
-
-    if (response.statusCode == 200) {
-      setState(() {
-        _response = jsonDecode(response.body)['references'];
-      });
-    } else {
-      setState(() {
-        _response = 'Failed to retrieve references.';
-      });
-    }
-  }
-
-  void _onTopicChanged(String topic) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 1000), () {
-      if (topic.isNotEmpty) {
-        fetchReferences(topic);
-      }
-    });
-  }
+  const SubjectCard({required this.subject, required this.onTap});
 
   @override
-  void dispose() {
-    _debounce?.cancel();
-    _controller.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        color: Colors.tealAccent,
+        child: Center(
+          child: Text(
+            subject,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SubjectDetailScreen extends StatelessWidget {
+  final String subject;
+
+  SubjectDetailScreen({required this.subject});
+
+  Future<Map<String, dynamic>> fetchResourcesFromFirestore(String subject) async {
+    try {
+      // Query Firestore for resources based on the subject
+      final snapshot = await FirebaseFirestore.instance
+          .collection('resources')
+          .doc(subject)
+          .get();
+
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>;
+      } else {
+        return {'error': 'No resources found for this subject'};
+      }
+    } catch (e) {
+      return {'error': 'Failed to fetch resources'};
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AI References for Study Topics'),
+        title: Text('$subject Resources'),
         backgroundColor: const Color.fromARGB(221, 250, 250, 250),
       ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.tealAccent[200]!, Colors.teal[900]!],
-              ),
-            ),
-          ),
-          Padding(
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchResourcesFromFirestore(subject),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError || snapshot.data == null || snapshot.data!['error'] != null) {
+            return Center(child: Text('Failed to load resources.'));
+          }
+
+          final resources = snapshot.data!;
+          
+          // Fetching module 1 field
+          final moduleLinks = resources['Module 1'] as List<dynamic>? ?? [];
+
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _controller,
-                  onChanged: _onTopicChanged,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Enter Topic Description',
-                    labelStyle: TextStyle(color: Colors.tealAccent[100]),
-                    filled: true,
-                    fillColor: Colors.black.withOpacity(0.7),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
+                Text('Module Links', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                ...moduleLinks.map((link) => ResourceTile(title: link['title'], link: link['url'])),
+                // Commented out parts related to articles and videos
+                // SizedBox(height: 20),
+                // Text('Articles', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                // SizedBox(height: 10),
+                // ...articles.map((article) => ResourceTile(title: article['title'], link: article['link'])),
+                // SizedBox(height: 20),
+                // Text('YouTube Videos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                // SizedBox(height: 10),
+                // ...videos.map((video) => ResourceTile(title: video['title'], link: video['link'])),
                 SizedBox(height: 20),
-                Expanded(
-                  child: _loading
-                      ? Center(
-                          child: SpinKitFadingCircle(
-                            color: Colors.tealAccent,
-                            size: 50.0,
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              _response.isEmpty
-                                  ? 'No references fetched yet.'
-                                  : _response,
-                              style: TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                ),
+                Text('AI-Powered Suggestions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                AIInsightsSection(subject: subject),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+}
+
+class ResourceTile extends StatelessWidget {
+  final String title;
+  final String link;
+
+  const ResourceTile({required this.title, required this.link});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(title, style: TextStyle(color: Colors.teal[900], fontWeight: FontWeight.w600)),
+      subtitle: Text(link),
+      trailing: Icon(Icons.launch),
+      onTap: () {
+        // Logic to launch the link (e.g., using url_launcher package)
+      },
+    );
+  }
+}
+
+class AIInsightsSection extends StatelessWidget {
+  final String subject;
+
+  const AIInsightsSection({required this.subject});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Based on your recent performance in $subject, here are some suggestions:'),
+        SizedBox(height: 10),
+        Text('- Focus on improving your weak areas, especially in topic X.'),
+        Text('- Consider watching this detailed video on Y.'),
+        Text('- Use these practice resources to improve your understanding.'),
+        // More suggestions based on the AI analysis.
+      ],
     );
   }
 }

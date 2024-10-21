@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "557988243981",
+    "project_id": "dbms-b665a",
+    "storage_bucket": "dbms-b665a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557988243981:android:660f40131aeb2730268344",
+        "android_client_info": {
+          "package_name": "com.example.student_task_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKW4YSk9mRfpy-PQY7c-GAseEfJb1mk9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
