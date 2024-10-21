@@ -1,6 +1,7 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:student_task_app/study.dart';
 import 'profile.dart';
 
 import '../models/task.dart';
@@ -364,8 +365,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               break;
             case 1:
               // Navigate to Study Screen (Placeholder)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Study Screen Coming Soon!')),
+             Navigator.push(context,
+             MaterialPageRoute(builder:(context)=> StudyScreen()),
               );
               break;
             case 2:
