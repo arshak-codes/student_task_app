@@ -1,5 +1,26 @@
+import 'dart:io'; // Import for File handling
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
+import 'package:flutter_pdfview/flutter_pdfview.dart'; // For PDF viewing
+import 'package:path_provider/path_provider.dart'; // To get the local path
+import 'package:http/http.dart' as http; // To fetch the PDF from the link
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Study Resources',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+      ),
+      home: StudyScreen(),
+    );
+  }
+}
 
 class StudyScreen extends StatelessWidget {
   final List<String> subjects = [
@@ -7,7 +28,7 @@ class StudyScreen extends StatelessWidget {
     'Physics',
     'Chemistry',
     'Biology',
-    'Computer Science'
+    'Computer Science',
   ];
 
   @override
@@ -76,12 +97,12 @@ class SubjectDetailScreen extends StatelessWidget {
 
   SubjectDetailScreen({required this.subject});
 
-  Future<Map<String, dynamic>> fetchResourcesFromFirestore(String subject) async {
+  Future<Map<String, dynamic>> fetchResourcesFromFirestore() async {
     try {
-      // Query Firestore for resources based on the subject
+      // Accessing the document directly by its name
       final snapshot = await FirebaseFirestore.instance
           .collection('resources')
-          .doc(subject)
+          .doc(subject) // Adjust to your document ID if different
           .get();
 
       if (snapshot.exists) {
@@ -90,7 +111,7 @@ class SubjectDetailScreen extends StatelessWidget {
         return {'error': 'No resources found for this subject'};
       }
     } catch (e) {
-      return {'error': 'Failed to fetch resources'};
+      return {'error': 'Failed to fetch resources: $e'};
     }
   }
 
@@ -102,18 +123,17 @@ class SubjectDetailScreen extends StatelessWidget {
         backgroundColor: const Color.fromARGB(221, 250, 250, 250),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchResourcesFromFirestore(subject),
+        future: fetchResourcesFromFirestore(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError || snapshot.data == null || snapshot.data!['error'] != null) {
-            return Center(child: Text('Failed to load resources.'));
+            return Center(child: Text('Failed to load resources. ${snapshot.data?['error'] ?? ''}'));
           }
 
           final resources = snapshot.data!;
-          
-          // Fetching module 1 field
-          final moduleLinks = resources['Module 1'] as List<dynamic>? ?? [];
+          final link = resources['link'] as String? ?? '';
+          final title = resources['title'] as String? ?? 'Untitled Module';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -122,16 +142,9 @@ class SubjectDetailScreen extends StatelessWidget {
               children: [
                 Text('Module Links', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
-                ...moduleLinks.map((link) => ResourceTile(title: link['title'], link: link['url'])),
-                // Commented out parts related to articles and videos
-                // SizedBox(height: 20),
-                // Text('Articles', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                // SizedBox(height: 10),
-                // ...articles.map((article) => ResourceTile(title: article['title'], link: article['link'])),
-                // SizedBox(height: 20),
-                // Text('YouTube Videos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                // SizedBox(height: 10),
-                // ...videos.map((video) => ResourceTile(title: video['title'], link: video['link'])),
+                link.isEmpty
+                    ? Text('No module links available for this subject.', style: TextStyle(color: Colors.grey))
+                    : ResourceTile(title: title, link: link),
                 SizedBox(height: 20),
                 Text('AI-Powered Suggestions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
@@ -151,15 +164,59 @@ class ResourceTile extends StatelessWidget {
 
   const ResourceTile({required this.title, required this.link});
 
+  Future<void> _viewPDF(BuildContext context, String url) async {
+    try {
+      // Get the temporary directory
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/${title.replaceAll(" ", "_")}.pdf';
+
+      // Fetch the PDF and save it locally
+      final response = await http.get(Uri.parse(url));
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+
+      // Navigate to the PDF viewer
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PDFViewerScreen(filePath: filePath),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading PDF: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(title, style: TextStyle(color: Colors.teal[900], fontWeight: FontWeight.w600)),
-      subtitle: Text(link),
-      trailing: Icon(Icons.launch),
-      onTap: () {
-        // Logic to launch the link (e.g., using url_launcher package)
-      },
+      subtitle: Text(link.isNotEmpty ? link : 'No link provided', style: TextStyle(color: Colors.grey)),
+      trailing: Icon(Icons.picture_as_pdf, color: Colors.teal), // Changed icon to PDF icon
+      onTap: link.isNotEmpty
+          ? () => _viewPDF(context, link) // Open PDF viewer instead of launching the link
+          : null,
+    );
+  }
+}
+
+class PDFViewerScreen extends StatelessWidget {
+  final String filePath;
+
+  const PDFViewerScreen({required this.filePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('PDF Viewer'),
+        backgroundColor: const Color.fromARGB(221, 250, 250, 250),
+      ),
+      body: PDFView(
+        filePath: filePath,
+      ),
     );
   }
 }
@@ -179,7 +236,6 @@ class AIInsightsSection extends StatelessWidget {
         Text('- Focus on improving your weak areas, especially in topic X.'),
         Text('- Consider watching this detailed video on Y.'),
         Text('- Use these practice resources to improve your understanding.'),
-        // More suggestions based on the AI analysis.
       ],
     );
   }
