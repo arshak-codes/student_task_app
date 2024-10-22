@@ -4,8 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore packa
 import 'package:flutter_pdfview/flutter_pdfview.dart'; // For PDF viewing
 import 'package:path_provider/path_provider.dart'; // To get the local path
 import 'package:http/http.dart' as http; // To fetch the PDF from the link
+import 'package:firebase_core/firebase_core.dart'; // Import Firebase core
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter binding is initialized
+  await Firebase.initializeApp(); // Initialize Firebase
   runApp(MyApp());
 }
 
@@ -26,9 +29,11 @@ class StudyScreen extends StatelessWidget {
   final List<String> subjects = [
     'System Software',
     'Physics',
-    'Chemistry',
-    'Biology',
-    'Computer Science',
+    'Computer Network',
+    'Disaster Management',
+    'MP and MC',
+    'MSS',
+    'Flat',
   ];
 
   @override
